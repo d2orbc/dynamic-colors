@@ -1,0 +1,312 @@
+// app/composables/useDynamicTheme.ts
+import colors from "tailwindcss/colors";
+import { ref, computed, readonly } from "vue";
+
+// Type for Tailwind color names (excluding deprecated ones)
+type TailwindColorName = keyof typeof colors;
+type ValidColorName = Exclude<
+  TailwindColorName,
+  | "inherit"
+  | "current"
+  | "transparent"
+  | "black"
+  | "white"
+  | "lightBlue"
+  | "warmGray"
+  | "trueGray"
+  | "coolGray"
+  | "blueGray"
+>;
+
+export type ThemeConfig = {
+  primary: ValidColorName;
+  secondary: ValidColorName;
+  surface: ValidColorName;
+};
+
+export const useDynamicTheme = () => {
+  const currentTheme = ref<string>("ocean");
+  const isDarkMode = ref<boolean>(false);
+
+  // Get available color palettes (filter out non-palette values)
+  const availableColors = computed(() => {
+    return Object.keys(colors).filter((key) => {
+      const value = colors[key as TailwindColorName];
+      return typeof value === "object" && "500" in value;
+    }) as ValidColorName[];
+  });
+
+  // Predefined theme configurations
+  const themes: Record<string, ThemeConfig> = {
+    ocean: {
+      primary: "blue",
+      secondary: "cyan",
+      surface: "slate",
+    },
+    forest: {
+      primary: "emerald",
+      secondary: "green",
+      surface: "stone",
+    },
+    sunset: {
+      primary: "orange",
+      secondary: "red",
+      surface: "zinc",
+    },
+    midnight: {
+      primary: "indigo",
+      secondary: "violet",
+      surface: "gray",
+    },
+  };
+
+
+  /**
+   * Generate CSS variables for a theme configuration
+   */
+  const generateThemeStyles = (config: ThemeConfig): string => {
+    let css = ":root {\n";
+
+    // For each semantic color (primary, secondary, surface)
+    const semanticColors = ["primary", "secondary", "surface"] as const;
+
+    // Define the shade mapping for dark mode
+    const shadeMap: Record<string | number, string | number> = isDarkMode.value ? {
+      50: 950,
+      100: 900,
+      200: 800,
+      300: 700,
+      400: 600,
+      500: 500,
+      600: 400,
+      700: 300,
+      800: 200,
+      900: 100,
+      950: 50
+    } : {
+      50: 50,
+      100: 100,
+      200: 200,
+      300: 300,
+      400: 400,
+      500: 500,
+      600: 600,
+      700: 700,
+      800: 800,
+      900: 900,
+      950: 950
+    };
+
+    semanticColors.forEach((semantic) => {
+      const colorName = config[semantic];
+      const palette = colors[colorName as TailwindColorName] as any;
+
+      if (!palette || typeof palette !== "object") {
+        console.warn(`Color palette '${colorName}' not found`);
+        return;
+      }
+
+      // Generate CSS variables for each shade
+      Object.entries(palette).forEach(([shade, value]) => {
+        // Get the mapped shade value for the current shade
+        const mappedShade = shadeMap[shade];
+        const mappedValue = palette[mappedShade] || value;
+
+        // Extract just the L C H values from the oklch() string
+        const oklchMatch = (mappedValue as string).match(
+          /oklch\(([\d.%]+)\s+([\d.]+)\s+([\d.]+)\)/,
+        );
+        if (oklchMatch) {
+          // Store just the values without oklch() wrapper for flexibility
+          const [, l, c, h] = oklchMatch;
+          css += `  --color-${semantic}-${shade}: oklch(${l} ${c} ${h});\n`;
+        }
+      });
+    });
+
+    css += "}";
+    return css;
+  };
+
+  /**
+   * Apply a theme configuration to the document
+   */
+  const applyTheme = (config: ThemeConfig) => {
+    const styleContent = generateThemeStyles(config);
+
+    // Remove existing theme style tag if it exists
+    const existingStyle = document.getElementById("dynamic-theme-styles");
+    if (existingStyle) {
+      existingStyle.remove();
+    }
+
+    // Create and inject new style tag
+    const styleTag = document.createElement("style");
+    styleTag.id = "dynamic-theme-styles";
+    styleTag.textContent = styleContent;
+    document.head.appendChild(styleTag);
+
+    // Add or remove dark mode class from document element
+    if (isDarkMode.value) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
+    // Save theme preference
+    if (import.meta.client) {
+      localStorage.setItem("selected-theme", currentTheme.value);
+      localStorage.setItem("dark-mode", isDarkMode.value.toString());
+    }
+  };
+
+  /**
+   * Switch to a predefined theme
+   */
+  const setTheme = (themeName: string) => {
+    if (!themes[themeName]) {
+      console.warn(`Theme '${themeName}' not found`);
+      return;
+    }
+
+    currentTheme.value = themeName;
+    applyTheme(themes[themeName]);
+  };
+
+  /**
+   * Create a custom theme with specific colors
+   */
+  const setCustomTheme = (config: ThemeConfig) => {
+    currentTheme.value = "custom";
+    applyTheme(config);
+
+    // Save custom theme configuration
+    if (import.meta.client) {
+      localStorage.setItem("custom-theme-config", JSON.stringify(config));
+    }
+  };
+
+  /**
+   * Toggle dark mode
+   */
+  const toggleDarkMode = () => {
+    isDarkMode.value = !isDarkMode.value;
+
+    // Re-apply current theme with new dark mode setting
+    if (currentTheme.value === "custom") {
+      const customConfig = localStorage.getItem("custom-theme-config");
+      if (customConfig) {
+        try {
+          const config = JSON.parse(customConfig);
+          applyTheme(config);
+        } catch (e) {
+          console.error("Failed to apply custom theme in dark mode");
+        }
+      }
+    } else if (themes[currentTheme.value]) {
+      applyTheme(themes[currentTheme.value]);
+    }
+
+    // Save dark mode preference
+    if (import.meta.client) {
+      localStorage.setItem("dark-mode", isDarkMode.value.toString());
+    }
+  };
+
+  /**
+   * Initialize theme on app load
+   */
+  const initTheme = () => {
+    if (!import.meta.client) return;
+
+    // Load dark mode preference
+    const savedDarkMode = localStorage.getItem("dark-mode");
+    if (savedDarkMode === "true") {
+      isDarkMode.value = true;
+    }
+
+    const savedTheme = localStorage.getItem("selected-theme");
+
+    if (savedTheme === "custom") {
+      const customConfig = localStorage.getItem("custom-theme-config");
+      if (customConfig) {
+        try {
+          const config = JSON.parse(customConfig);
+          setCustomTheme(config);
+        } catch (e) {
+          setTheme("ocean"); // Fallback to default
+        }
+      }
+    } else if (savedTheme && themes[savedTheme]) {
+      setTheme(savedTheme);
+    } else {
+      setTheme("ocean"); // Default theme
+    }
+  };
+
+
+  /**
+   * Export current theme to JSON
+   */
+  const exportTheme = () => {
+    const config = {
+      name:
+        currentTheme.value === "custom" ? "Custom Theme" : currentTheme.value,
+      version: "1.0.0",
+      colors:
+        currentTheme.value === "custom"
+          ? JSON.parse(localStorage.getItem("custom-theme-config") || "{}")
+          : themes[currentTheme.value],
+      created: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(config, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `theme-${config.name.toLowerCase().replace(/\s+/g, "-")}.json`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  /**
+   * Import theme from JSON file
+   */
+  const importTheme = async (file: File) => {
+    try {
+      const text = await file.text();
+      const config = JSON.parse(text);
+
+      // Validate the imported config
+      if (
+        config.colors?.primary &&
+        config.colors?.secondary &&
+        config.colors?.surface
+      ) {
+        setCustomTheme(config.colors);
+      } else {
+        console.error("Invalid theme file");
+      }
+    } catch (error) {
+      console.error("Failed to import theme:", error);
+      throw error;
+    }
+  };
+
+  return {
+    currentTheme: readonly(currentTheme),
+    isDarkMode: readonly(isDarkMode),
+    themes,
+    availableColors,
+    setTheme,
+    setCustomTheme,
+    toggleDarkMode,
+    exportTheme,
+    importTheme,
+    initTheme,
+  };
+};

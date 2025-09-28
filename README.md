@@ -1,75 +1,142 @@
-# Nuxt Minimal Starter
+# Dynamic Runtime Theming with Tailwind CSS and OKLCH Colors
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+## The Power of CSS Variables + Tailwind
 
-## Setup
+This project demonstrates a dynamic theming system that lets you change entire color palettes at runtime. Instead of generating thousands of CSS rules for every possible color combination, we use CSS custom properties as a bridge between Tailwind's utility classes and dynamically injected OKLCH values.
 
-Make sure to install dependencies:
+The approach:
+1. Define semantic colors in CSS using Tailwind's `@theme` directive
+2. Use CSS variables that can be overridden at runtime
+3. Generate only the CSS variables for the active theme
+4. Inject those variables into a `<style>` tag dynamically
+5. Tailwind utilities automatically use the new colors
 
-```bash
-# npm
-npm install
+## Why OKLCH?
 
-# pnpm
-pnpm install
+OKLCH provides perceptually uniform colors - a 10% change in lightness looks consistent across all hues. This makes it perfect for generating color scales that maintain visual harmony and accessibility.
 
-# yarn
-yarn install
+## Core Implementation
 
-# bun
-bun install
+### Tailwind Configuration with CSS Variables
+
+```css
+/* app/assets/css/main.css */
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: oklch(97% 0.014 254.604);
+  --color-primary-100: oklch(93.2% 0.032 255.585);
+  --color-primary-200: oklch(88.2% 0.059 254.128);
+  --color-primary-300: oklch(80.9% 0.105 251.813);
+  --color-primary-400: oklch(70.7% 0.165 254.624);
+  --color-primary-500: oklch(62.3% 0.214 259.815);
+  /* ... all shades for primary, secondary, surface */
+}
 ```
 
-## Development Server
+### Dynamic Style Tag Generation
 
-Start the development server on `http://localhost:3000`:
+The magic happens in our composable that generates and injects CSS variables:
 
-```bash
-# npm
-npm run dev
+```typescript
+const generateThemeStyles = (config: ThemeConfig): string => {
+  let css = ":root {\n";
+  
+  semanticColors.forEach((semantic) => {
+    const colorName = config[semantic];
+    const palette = colors[colorName];
+    
+    Object.entries(palette).forEach(([shade, value]) => {
+      // Extract OKLCH values and create CSS variable
+      const oklchMatch = value.match(/oklch\(([\d.%]+)\s+([\d.]+)\s+([\d.]+)\)/);
+      if (oklchMatch) {
+        const [, l, c, h] = oklchMatch;
+        css += `  --color-${semantic}-${shade}: oklch(${l} ${c} ${h});\n`;
+      }
+    });
+  });
+  
+  css += "}";
+  return css;
+};
 
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+const applyTheme = (config: ThemeConfig) => {
+  const styleContent = generateThemeStyles(config);
+  
+  // Remove existing theme style tag
+  const existingStyle = document.getElementById("dynamic-theme-styles");
+  if (existingStyle) existingStyle.remove();
+  
+  // Create and inject new style tag
+  const styleTag = document.createElement("style");
+  styleTag.id = "dynamic-theme-styles";
+  styleTag.textContent = styleContent;
+  document.head.appendChild(styleTag);
+};
 ```
 
-## Production
+## Dark Mode Magic
 
-Build the application for production:
+Dark mode works by intelligently inverting the color scale. Light shades become dark, and dark shades become light, while maintaining perceptual consistency:
 
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+```typescript
+const shadeMap = isDarkMode.value ? {
+  50: 950,   // Lightest becomes darkest
+  100: 900,
+  200: 800,
+  300: 700,
+  400: 600,
+  500: 500,  // Middle stays middle
+  600: 400,
+  700: 300,
+  800: 200,
+  900: 100,
+  950: 50    // Darkest becomes lightest
+} : {
+  // Normal mapping in light mode
+};
 ```
 
-Locally preview production build:
+When you toggle dark mode:
+- The document gets a `dark` class
+- Color variables are regenerated with inverted shades
+- All Tailwind utilities automatically use the new values
 
-```bash
-# npm
-npm run preview
+## Using the System
 
-# pnpm
-pnpm preview
+Once initialized, you use standard Tailwind classes throughout your app:
 
-# yarn
-yarn preview
+```vue
+<!-- These classes work with any theme -->
+<button class="bg-primary-500 hover:bg-primary-600 text-white">
+  Primary Button
+</button>
 
-# bun
-bun run preview
+<div class="bg-surface-100 border-surface-200">
+  <h2 class="text-surface-900">Content Area</h2>
+  <p class="text-surface-600">Adapts to any theme</p>
+</div>
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+The colors change dynamically when you:
+- Switch between predefined themes (ocean, forest, sunset, midnight)
+- Toggle dark mode
+- Create custom color combinations
+
+## Performance Benefits
+
+This approach is incredibly efficient:
+- **~100 lines of CSS** for a complete theme (vs thousands with traditional approaches)
+- **No JavaScript in render path** - changes happen entirely through CSS
+- **Hardware-accelerated** CSS custom properties
+- **Zero bundle bloat** - only the theme engine code is included
+
+## The Result
+
+You get the best of both worlds:
+- **Developer experience**: Use familiar Tailwind utilities like `bg-primary-500`
+- **User experience**: Complete theme customization without rebuilding CSS
+- **Performance**: Minimal runtime overhead with native browser optimization
+- **Dark mode**: Automatic, intelligent color scale inversion
+
+The entire theme system is just a few hundred lines of code, yet provides infinite color possibilities while maintaining the simplicity and power of Tailwind CSS.
