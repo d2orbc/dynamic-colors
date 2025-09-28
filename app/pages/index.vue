@@ -45,7 +45,7 @@
 
     <main class="max-w-7xl mx-auto px-4 py-8 space-y-12">
       <!-- Hero Section -->
-      <section class="text-center py-12">
+      <section class="text-center py-2">
         <h2 class="text-4xl font-bold text-text-900 mb-4">
           Dynamic Runtime Theming with <span class="text-primary-500">Tailwind CSS</span>
         </h2>
@@ -53,6 +53,29 @@
           Change your entire color scheme instantly. No rebuilds, no massive CSS bundles.
           Just beautiful, performant themes powered by CSS custom properties and OKLCH colors.
         </p>
+        
+        <!-- Links -->
+        <div class="mt-4 flex items-center justify-center gap-6">
+          <a href="https://github.com/d2orbc/dynamic-colors" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-text-600 hover:text-primary-600 transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.607.069-.607 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd" />
+            </svg>
+            <span class="font-medium">View on GitHub</span>
+          </a>
+          <a href="https://github.com/d2orbc/dynamic-colors/blob/main/README.md" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-700 underline font-medium">Read more →</a>
+        </div>
+        
+        <!-- Code Example -->
+        <div class="mt-8 max-w-2xl mx-auto">
+          <pre class="bg-surface-900 text-text-50 p-4 rounded-lg overflow-x-auto text-sm text-left"><code><span class="text-primary-400">&lt;!-- All these classes automatically adapt to theme changes and dark mode --&gt;</span>
+<span class="text-text-300">&lt;button</span> <span class="text-success-400">class</span>=<span class="text-warn-400">"bg-primary-500 text-primary-50 hover:bg-primary-600"</span><span class="text-text-300">&gt;</span>
+  Primary Button
+<span class="text-text-300">&lt;/button&gt;</span>
+
+<span class="text-text-300">&lt;div</span> <span class="text-success-400">class</span>=<span class="text-warn-400">"bg-success-50 border-success-200 text-success-800"</span><span class="text-text-300">&gt;</span> ✓ <span class="text-text-300">&lt;/div&gt;</span>
+
+<span class="text-text-300">&lt;p</span> <span class="text-success-400">class</span>=<span class="text-warn-400">"text-text-600"</span><span class="text-text-300">&gt;</span>Greetings<span class="text-text-300">&lt;/p&gt;</span></code></pre>
+        </div>
       </section>
 
       <!-- Quick Theme Customization -->
