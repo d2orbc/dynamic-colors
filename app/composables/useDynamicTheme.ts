@@ -22,6 +22,10 @@ export type ThemeConfig = {
   primary: ValidColorName;
   secondary: ValidColorName;
   surface: ValidColorName;
+  text: ValidColorName;
+  success: ValidColorName;
+  warn: ValidColorName;
+  error: ValidColorName;
 };
 
 export const useDynamicTheme = () => {
@@ -42,21 +46,37 @@ export const useDynamicTheme = () => {
       primary: "blue",
       secondary: "cyan",
       surface: "slate",
+      text: "gray",
+      success: "green",
+      warn: "amber",
+      error: "red",
     },
     forest: {
       primary: "emerald",
       secondary: "green",
       surface: "stone",
+      text: "gray",
+      success: "lime",
+      warn: "yellow",
+      error: "rose",
     },
     sunset: {
       primary: "orange",
       secondary: "red",
-      surface: "zinc",
+      surface: "orange",
+      text: "yellow",
+      success: "emerald",
+      warn: "yellow",
+      error: "red",
     },
     midnight: {
       primary: "indigo",
       secondary: "violet",
       surface: "gray",
+      text: "slate",
+      success: "teal",
+      warn: "amber",
+      error: "pink",
     },
   };
 
@@ -67,8 +87,8 @@ export const useDynamicTheme = () => {
   const generateThemeStyles = (config: ThemeConfig): string => {
     let css = ":root {\n";
 
-    // For each semantic color (primary, secondary, surface)
-    const semanticColors = ["primary", "secondary", "surface"] as const;
+    // For each semantic color
+    const semanticColors = ["primary", "secondary", "surface", "text", "success", "warn", "error"] as const;
 
     // Define the shade mapping for dark mode
     const shadeMap: Record<string | number, string | number> = isDarkMode.value ? {

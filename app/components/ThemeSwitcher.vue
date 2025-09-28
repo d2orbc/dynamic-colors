@@ -2,7 +2,7 @@
   <div class="theme-switcher">
     <!-- Predefined themes -->
     <div class="space-y-4 mb-6">
-      <h3 class="text-lg font-semibold text-surface-800">
+      <h3 class="text-lg font-semibold text-text-800">
         Predefined Themes
       </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -19,7 +19,7 @@
         >
           <!-- Theme Name -->
           <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold capitalize text-surface-700">{{ name }}</span>
+            <span class="text-sm font-semibold capitalize text-text-700">{{ name }}</span>
             <div v-if="currentTheme === name" class="w-2 h-2 bg-primary-500 rounded-full animate-pulse"/>
           </div>
           
@@ -30,7 +30,7 @@
               :key="role"
               class="flex-1"
             >
-              <div class="text-[10px] text-surface-500 mb-1 capitalize">{{ role }}</div>
+              <div class="text-[10px] text-text-500 mb-1 capitalize">{{ role }}</div>
               <div class="flex gap-0.5">
                 <span 
                   v-for="shade in [100, 300, 500, 700, 900]"
@@ -48,14 +48,14 @@
 
     <!-- Custom theme builder -->
     <div class="space-y-4 pt-6 border-t border-surface-200">
-      <h3 class="text-lg font-semibold text-surface-800">
+      <h3 class="text-lg font-semibold text-text-800">
         Custom Theme Builder
       </h3>
       
       <div class="space-y-4">
         <!-- Primary Color Selection -->
         <div>
-          <label class="block text-sm font-semibold text-surface-700 mb-2">
+          <label class="block text-sm font-semibold text-text-700 mb-2">
             Primary Color
           </label>
           <div class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
@@ -83,7 +83,7 @@
         
         <!-- Secondary Color Selection -->
         <div>
-          <label class="block text-sm font-semibold text-surface-700 mb-2">
+          <label class="block text-sm font-semibold text-text-700 mb-2">
             Secondary Color
           </label>
           <div class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
@@ -111,7 +111,7 @@
         
         <!-- Surface Color Selection -->
         <div>
-          <label class="block text-sm font-semibold text-surface-700 mb-2">
+          <label class="block text-sm font-semibold text-text-700 mb-2">
             Surface Color
           </label>
           <div class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
@@ -136,21 +136,133 @@
             </button>
           </div>
         </div>
+        
+        <!-- Text Color Selection -->
+        <div>
+          <label class="block text-sm font-semibold text-text-700 mb-2">
+            Text Color
+          </label>
+          <div class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
+            <button
+              v-for="color in availableColors"
+              :key="color"
+              @click="selectColor('text', color)"
+              :class="[
+                'group relative h-12 rounded-lg border-2 transition-all duration-150',
+                customConfig.text === color 
+                  ? 'border-text-700 ring-2 ring-text-400 ring-offset-1' 
+                  : 'border-surface-200 hover:border-surface-400 hover:scale-105'
+              ]"
+              :style="{ backgroundColor: getColorPreview(color) }"
+              :title="color"
+            >
+              <span 
+                class="absolute bottom-0.5 left-0.5 right-0.5 text-[9px] text-white bg-black/50 px-1 rounded text-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                {{ color }}
+              </span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Success Color Selection -->
+        <div>
+          <label class="block text-sm font-semibold text-text-700 mb-2">
+            Success Color
+          </label>
+          <div class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
+            <button
+              v-for="color in availableColors"
+              :key="color"
+              @click="selectColor('success', color)"
+              :class="[
+                'group relative h-12 rounded-lg border-2 transition-all duration-150',
+                customConfig.success === color 
+                  ? 'border-success-500 ring-2 ring-success-300 ring-offset-1' 
+                  : 'border-surface-200 hover:border-surface-400 hover:scale-105'
+              ]"
+              :style="{ backgroundColor: getColorPreview(color) }"
+              :title="color"
+            >
+              <span 
+                class="absolute bottom-0.5 left-0.5 right-0.5 text-[9px] text-white bg-black/50 px-1 rounded text-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                {{ color }}
+              </span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Warning Color Selection -->
+        <div>
+          <label class="block text-sm font-semibold text-text-700 mb-2">
+            Warning Color
+          </label>
+          <div class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
+            <button
+              v-for="color in availableColors"
+              :key="color"
+              @click="selectColor('warn', color)"
+              :class="[
+                'group relative h-12 rounded-lg border-2 transition-all duration-150',
+                customConfig.warn === color 
+                  ? 'border-warn-500 ring-2 ring-warn-300 ring-offset-1' 
+                  : 'border-surface-200 hover:border-surface-400 hover:scale-105'
+              ]"
+              :style="{ backgroundColor: getColorPreview(color) }"
+              :title="color"
+            >
+              <span 
+                class="absolute bottom-0.5 left-0.5 right-0.5 text-[9px] text-white bg-black/50 px-1 rounded text-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                {{ color }}
+              </span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Error Color Selection -->
+        <div>
+          <label class="block text-sm font-semibold text-text-700 mb-2">
+            Error Color
+          </label>
+          <div class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1">
+            <button
+              v-for="color in availableColors"
+              :key="color"
+              @click="selectColor('error', color)"
+              :class="[
+                'group relative h-12 rounded-lg border-2 transition-all duration-150',
+                customConfig.error === color 
+                  ? 'border-error-500 ring-2 ring-error-300 ring-offset-1' 
+                  : 'border-surface-200 hover:border-surface-400 hover:scale-105'
+              ]"
+              :style="{ backgroundColor: getColorPreview(color) }"
+              :title="color"
+            >
+              <span 
+                class="absolute bottom-0.5 left-0.5 right-0.5 text-[9px] text-white bg-black/50 px-1 rounded text-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                {{ color }}
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Live Preview -->
     <div class="mt-6 space-y-4">
-      <h3 class="text-sm font-semibold text-surface-700">Live Preview</h3>
+      <h3 class="text-sm font-semibold text-text-700">Live Preview</h3>
       
       <!-- Component Examples -->
       <div class="p-4 bg-surface-100 rounded-lg space-y-4">
         <!-- Buttons -->
         <div class="flex flex-wrap gap-2">
-          <button class="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors">
+          <button class="px-4 py-2 bg-primary-500 text-primary-50 rounded-lg hover:bg-primary-600 transition-colors">
             Primary Button
           </button>
-          <button class="px-4 py-2 bg-secondary-500 text-white rounded-lg hover:bg-secondary-600 transition-colors">
+          <button class="px-4 py-2 bg-secondary-500 text-secondary-50 rounded-lg hover:bg-secondary-600 transition-colors">
             Secondary Button
           </button>
           <button class="px-4 py-2 border-2 border-primary-500 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors">
@@ -161,8 +273,8 @@
         <!-- Cards -->
         <div class="grid grid-cols-2 gap-3">
           <div class="p-3 bg-surface-50 border border-surface-200 rounded-lg">
-            <h4 class="text-sm font-semibold text-surface-900 mb-1">Card Title</h4>
-            <p class="text-xs text-surface-600">Sample card content with surface colors.</p>
+            <h4 class="text-sm font-semibold text-text-900 mb-1">Card Title</h4>
+            <p class="text-xs text-text-600">Sample card content with text colors.</p>
           </div>
           <div class="p-3 bg-primary-50 border border-primary-200 rounded-lg">
             <h4 class="text-sm font-semibold text-primary-900 mb-1">Primary Card</h4>
@@ -172,7 +284,7 @@
         
         <!-- Color Shades -->
         <div class="space-y-2">
-          <div class="text-xs text-surface-600 font-medium">Primary Shades</div>
+          <div class="text-xs text-text-600 font-medium">Primary Shades</div>
           <div class="grid grid-cols-11 gap-1">
             <div 
               v-for="shade in [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]"
@@ -181,7 +293,7 @@
               :class="`bg-primary-${shade}`"
             >
               <span class="absolute inset-0 flex items-center justify-center text-[8px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                    :class="shade < 500 ? 'text-surface-900' : 'text-white'">
+                    :class="shade < 500 ? 'text-text-900' : 'text-text-50'">
                 {{ shade }}
               </span>
             </div>
@@ -189,7 +301,7 @@
         </div>
         
         <div class="space-y-2">
-          <div class="text-xs text-surface-600 font-medium">Secondary Shades</div>
+          <div class="text-xs text-text-600 font-medium">Secondary Shades</div>
           <div class="grid grid-cols-11 gap-1">
             <div 
               v-for="shade in [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]"
@@ -198,7 +310,7 @@
               :class="`bg-secondary-${shade}`"
             >
               <span class="absolute inset-0 flex items-center justify-center text-[8px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                    :class="shade < 500 ? 'text-surface-900' : 'text-white'">
+                    :class="shade < 500 ? 'text-text-900' : 'text-text-50'">
                 {{ shade }}
               </span>
             </div>
@@ -206,7 +318,7 @@
         </div>
         
         <div class="space-y-2">
-          <div class="text-xs text-surface-600 font-medium">Surface Shades</div>
+          <div class="text-xs text-text-600 font-medium">Surface Shades</div>
           <div class="grid grid-cols-11 gap-1">
             <div 
               v-for="shade in [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]"
@@ -215,11 +327,32 @@
               :class="`bg-surface-${shade}`"
             >
               <span class="absolute inset-0 flex items-center justify-center text-[8px] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                    :class="shade < 500 ? 'text-surface-900' : 'text-white'">
+                    :class="shade < 500 ? 'text-text-900' : 'text-text-50'">
                 {{ shade }}
               </span>
             </div>
           </div>
+        </div>
+        
+        <!-- Status Colors Preview -->
+        <div class="flex gap-2 mt-4">
+          <div class="flex-1 p-2 bg-success-50 border border-success-200 rounded">
+            <span class="text-xs font-medium text-success-700">Success</span>
+          </div>
+          <div class="flex-1 p-2 bg-warn-50 border border-warn-200 rounded">
+            <span class="text-xs font-medium text-warn-700">Warning</span>
+          </div>
+          <div class="flex-1 p-2 bg-error-50 border border-error-200 rounded">
+            <span class="text-xs font-medium text-error-700">Error</span>
+          </div>
+        </div>
+        
+        <!-- Text Color Preview -->
+        <div class="space-y-1 mt-2">
+          <p class="text-xs text-text-400">Light text</p>
+          <p class="text-sm text-text-600">Regular text</p>
+          <p class="text-base font-medium text-text-800">Strong text</p>
+          <p class="text-lg font-bold text-text-900">Bold text</p>
         </div>
       </div>
     </div>
@@ -229,7 +362,7 @@
       <div class="flex gap-2">
         <button
           @click="exportTheme"
-          class="flex-1 px-3 py-2 text-sm font-medium bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 transition-colors"
+          class="flex-1 px-3 py-2 text-sm font-medium bg-surface-100 text-text-700 rounded-lg hover:bg-surface-200 transition-colors"
         >
           Export Theme
         </button>
@@ -240,7 +373,7 @@
             accept=".json"
             class="hidden"
           />
-          <span class="block w-full px-3 py-2 text-sm font-medium text-center bg-surface-100 text-surface-700 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer">
+          <span class="block w-full px-3 py-2 text-sm font-medium text-center bg-surface-100 text-text-700 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer">
             Import Theme
           </span>
         </label>
@@ -280,11 +413,15 @@ const getColorPreview = (colorName: string) => {
 const customConfig = ref({
   primary: 'blue',
   secondary: 'cyan',
-  surface: 'slate'
+  surface: 'slate',
+  text: 'gray',
+  success: 'green',
+  warn: 'amber',
+  error: 'red'
 })
 
 // Select a Tailwind color
-const selectColor = (role: 'primary' | 'secondary' | 'surface', colorName: string) => {
+const selectColor = (role: 'primary' | 'secondary' | 'surface' | 'text' | 'success' | 'warn' | 'error', colorName: string) => {
   customConfig.value[role] = colorName as any
   setCustomTheme(customConfig.value)
 }

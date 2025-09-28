@@ -24,12 +24,13 @@ OKLCH provides perceptually uniform colors - a 10% change in lightness looks con
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: oklch(97% 0.014 254.604);
-  --color-primary-100: oklch(93.2% 0.032 255.585);
-  --color-primary-200: oklch(88.2% 0.059 254.128);
-  --color-primary-300: oklch(80.9% 0.105 251.813);
-  --color-primary-400: oklch(70.7% 0.165 254.624);
-  --color-primary-500: oklch(62.3% 0.214 259.815);
+  /* Primary colors - reference Tailwind's color palette */
+  --color-primary-50: var(--color-blue-50);
+  --color-primary-100: var(--color-blue-100);
+  --color-primary-200: var(--color-blue-200);
+  --color-primary-300: var(--color-blue-300);
+  --color-primary-400: var(--color-blue-400);
+  --color-primary-500: var(--color-blue-500);
   /* ... all shades for primary, secondary, surface */
 }
 ```
