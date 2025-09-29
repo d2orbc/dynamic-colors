@@ -1,85 +1,162 @@
 // app/composables/useDynamicTheme.ts
-import colors from "tailwindcss/colors";
 import { ref, computed, readonly } from "vue";
+import { apcach, crToBg, crToFg, apcachToCss } from "apcach";
 
-// Type for Tailwind color names (excluding deprecated ones)
-type TailwindColorName = keyof typeof colors;
-type ValidColorName = Exclude<
-  TailwindColorName,
-  | "inherit"
-  | "current"
-  | "transparent"
-  | "black"
-  | "white"
-  | "lightBlue"
-  | "warmGray"
-  | "trueGray"
-  | "coolGray"
-  | "blueGray"
->;
+// Type for color configuration using hue + chroma
+export type ColorConfig = {
+  hue: number;
+  chroma: number;
+};
 
 export type ThemeConfig = {
-  primary: ValidColorName;
-  secondary: ValidColorName;
-  surface: ValidColorName;
-  text: ValidColorName;
-  success: ValidColorName;
-  warn: ValidColorName;
-  error: ValidColorName;
+  primary: ColorConfig;
+  secondary: ColorConfig;
+  surface: ColorConfig;
+  text: ColorConfig;
+  success: ColorConfig;
+  warn: ColorConfig;
+  error: ColorConfig;
+  contrast?: number; // Optional theme-level contrast modifier (default: 1.0)
 };
 
 export const useDynamicTheme = () => {
   const currentTheme = ref<string>("ocean");
   const isDarkMode = ref<boolean>(false);
 
-  // Get available color palettes (filter out non-palette values)
-  const availableColors = computed(() => {
-    return Object.keys(colors).filter((key) => {
-      const value = colors[key as TailwindColorName];
-      return typeof value === "object" && "500" in value;
-    }) as ValidColorName[];
-  });
-
-  // Predefined theme configurations
+  // Predefined theme configurations with hue + chroma pairs
   const themes: Record<string, ThemeConfig> = {
     ocean: {
-      primary: "blue",
-      secondary: "cyan",
-      surface: "slate",
-      text: "gray",
-      success: "green",
-      warn: "amber",
-      error: "red",
+      primary: { hue: 220, chroma: 0.3 },
+      secondary: { hue: 185, chroma: 0.25 },
+      surface: { hue: 215, chroma: 0.02 },
+      text: { hue: 220, chroma: 0.02 },
+      success: { hue: 120, chroma: 0.25 },
+      warn: { hue: 45, chroma: 0.3 },
+      error: { hue: 0, chroma: 0.3 },
+      contrast: 1.0, // Default contrast for ocean theme
     },
     forest: {
-      primary: "emerald",
-      secondary: "green",
-      surface: "stone",
-      text: "gray",
-      success: "lime",
-      warn: "yellow",
-      error: "rose",
+      primary: { hue: 140, chroma: 0.3 },
+      secondary: { hue: 120, chroma: 0.25 },
+      surface: { hue: 30, chroma: 0.02 },
+      text: { hue: 0, chroma: 0.02 },
+      success: { hue: 85, chroma: 0.3 },
+      warn: { hue: 60, chroma: 0.35 },
+      error: { hue: 350, chroma: 0.25 },
+      contrast: 0.95, // Slightly softer contrast for forest theme
     },
     sunset: {
-      primary: "orange",
-      secondary: "red",
-      surface: "orange",
-      text: "yellow",
-      success: "emerald",
-      warn: "yellow",
-      error: "red",
+      primary: { hue: 30, chroma: 0.35 },
+      secondary: { hue: 10, chroma: 0.3 },
+      surface: { hue: 35, chroma: 0.08 },
+      text: { hue: 50, chroma: 0.02 },
+      success: { hue: 140, chroma: 0.25 },
+      warn: { hue: 60, chroma: 0.35 },
+      error: { hue: 0, chroma: 0.3 },
+      contrast: 1.05, // Slightly higher contrast for sunset theme
     },
     midnight: {
-      primary: "indigo",
-      secondary: "violet",
-      surface: "gray",
-      text: "slate",
-      success: "teal",
-      warn: "amber",
-      error: "pink",
+      primary: { hue: 240, chroma: 0.3 },
+      secondary: { hue: 270, chroma: 0.25 },
+      surface: { hue: 220, chroma: 0.03 },
+      text: { hue: 215, chroma: 0.02 },
+      success: { hue: 170, chroma: 0.25 },
+      warn: { hue: 45, chroma: 0.3 },
+      error: { hue: 340, chroma: 0.25 },
+      contrast: 0.9, // Lower contrast for midnight theme
     },
   };
 
+  // Map shade numbers to APCA contrast ratios
+  const shadeToContrast = (shade: number, isDark: boolean, semantic: string): number => {
+    const lightModeMap: Record<number, number> = {
+      50: 5,
+      100: 10,
+      200: 20,
+      300: 30,
+      400: 40,
+      500: 50,
+      600: 60,
+      700: 70,
+      800: 80,
+      900: 90,
+      950: 100,
+    };
+
+    const darkModeMap: Record<number, number> = {
+      50: 100,
+      100: 90,
+      200: 80,
+      300: 70,
+      400: 60,
+      500: 50,
+      600: 40,
+      700: 30,
+      800: 20,
+      900: 10,
+      950: 5,
+    };
+
+
+    // For colors (primary, secondary, etc.) use regular mapping
+    return lightModeMap[shade];
+  };
+
+  /**
+   * Generate a single color shade using APCACH
+   */
+  const generateColorShade = (
+    colorConfig: ColorConfig,
+    shade: number,
+    semantic: string,
+    isDark: boolean,
+    themeContrast: number = 1.0
+  ): string => {
+    const baseContrast = shadeToContrast(shade, isDark, semantic);
+    const { hue, chroma } = colorConfig;
+
+    // Apply theme-level contrast modifier
+    const targetContrast = baseContrast * themeContrast;
+
+    try {
+      let color;
+
+      // Use appropriate background base for calculations
+      const bgBase = isDark ? '#1a1a1a' : '#fafafa';
+
+      // Use different functions based on semantic token type
+      if (semantic === 'surface') {
+        // For backgrounds, use crToBg for better background colors
+        const bgConfig = crToBg(bgBase, targetContrast);
+        color = apcach(bgConfig, chroma, hue);
+      } else if (semantic === 'text') {
+        // For text, use crToFg for better foreground colors
+        // In dark mode, we need to generate light text against dark background
+        const fgConfig = crToFg(bgBase, targetContrast);
+        color = apcach(fgConfig, chroma, hue);
+      } else {
+        // For primary, secondary, and status colors, use core apcach
+        // Adjust chroma based on shade for better visual hierarchy
+        const adjustedChroma = shade < 300 ? chroma * 0.3 :
+          shade < 500 ? chroma * 0.6 :
+            shade > 700 ? chroma * 0.8 :
+              chroma;
+
+        const fgConfig = crToFg(bgBase, targetContrast);
+        // Use the adjusted chroma directly - maxChroma is a function, not a value
+        color = apcach(fgConfig, adjustedChroma, hue);
+      }
+
+      // Convert to CSS format (oklch)
+      const cssValue = apcachToCss(color, 'oklch');
+      return cssValue;
+    } catch (error) {
+      // Fallback to a gray if generation fails
+      console.warn(`Failed to generate color for ${semantic}-${shade}:`, error);
+      const fallbackLightness = isDark ? (100 - shade / 10) : (shade / 10);
+      return `oklch(${fallbackLightness}% 0 0)`;
+    }
+  };
 
   /**
    * Generate CSS variables for a theme configuration
@@ -87,35 +164,36 @@ export const useDynamicTheme = () => {
   const generateThemeStyles = (config: ThemeConfig): string => {
     let css = ":root {\n";
 
+    // Shade values to generate
+    const shades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+
     // For each semantic color
-    const semanticColors = ["primary", "secondary", "surface", "text", "success", "warn", "error"] as const;
+    const semanticColors = [
+      "primary",
+      "secondary",
+      "surface",
+      "text",
+      "success",
+      "warn",
+      "error",
+    ] as const;
+
+    // Get theme contrast or default to 1.0
+    const themeContrast = config.contrast || 1.0;
 
     semanticColors.forEach((semantic) => {
-      const colorName = config[semantic];
-      const palette = colors[colorName as TailwindColorName] as any;
-
-      if (!palette || typeof palette !== "object") {
-        console.warn(`Color palette '${colorName}' not found`);
-        return;
-      }
+      const colorConfig = config[semantic];
 
       // Generate CSS variables for each shade
-      Object.entries(palette).forEach(([shade, value]) => {
-        const mappedValue = palette[shade] || value;
-
-        // Extract just the L C H values from the oklch() string
-        const oklchMatch = (mappedValue as string).match(
-          /oklch\(([\d.%]+)\s+([\d.]+)\s+([\d.]+)\)/,
+      shades.forEach((shade) => {
+        const colorValue = generateColorShade(
+          colorConfig,
+          shade,
+          semantic,
+          isDarkMode.value,
+          themeContrast
         );
-        if (oklchMatch) {
-          // Store just the values without oklch() wrapper for flexibility
-          const [, l, c, h] = oklchMatch;
-          let lightness = Number(l?.substring(0, l.length - 1))
-          if (isDarkMode.value) {
-            lightness = 120 - lightness;
-          }
-          css += `  --color-${semantic}-${shade}: oklch(${lightness}% ${c} ${h});\n`;
-        }
+        css += `  --color-${semantic}-${shade}: ${colorValue};\n`;
       });
     });
 
@@ -239,14 +317,55 @@ export const useDynamicTheme = () => {
     }
   };
 
+  // Helper function to get available hues for color picker
+  const availableHues = computed(() => {
+    return Array.from({ length: 36 }, (_, i) => i * 10);
+  });
+
+  // Helper function to get available chromas for intensity picker
+  const availableChromas = computed(() => {
+    return [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4];
+  });
+
+  /**
+   * Generate a single color value for preview swatches
+   */
+  const generateSwatchColor = (
+    colorConfig: ColorConfig,
+    shade: number,
+    semantic: string,
+    darkMode?: boolean,
+    themeContrast: number = 1.0
+  ): string => {
+    // Use provided darkMode or fall back to current setting
+    const isDark = darkMode !== undefined ? darkMode : isDarkMode.value;
+    return generateColorShade(colorConfig, shade, semantic, isDark, themeContrast);
+  };
+
+  // Pre-generate static preview colors for theme swatches
+  const themePreviewColors: Record<string, { primary: string; secondary: string; surface: string }> = {};
+
+  // Generate preview colors once at initialization
+  Object.entries(themes).forEach(([themeName, config]) => {
+    themePreviewColors[themeName] = {
+      primary: generateColorShade(config.primary, 500, 'primary', false, config.contrast || 1.0),
+      secondary: generateColorShade(config.secondary, 500, 'secondary', false, config.contrast || 1.0),
+      surface: generateColorShade(config.surface, 500, 'surface', false, config.contrast || 1.0),
+    };
+  });
+
   return {
     currentTheme: readonly(currentTheme),
     isDarkMode: readonly(isDarkMode),
-    themes,
-    availableColors,
+    themes: Object.freeze(themes),
+    themePreviewColors: Object.freeze(themePreviewColors),
+    availableHues,
+    availableChromas,
     setTheme,
     setCustomTheme,
     toggleDarkMode,
     initTheme,
+    generateSwatchColor,
+    generateColorShade,
   };
 };
