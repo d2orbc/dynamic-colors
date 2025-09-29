@@ -78,29 +78,23 @@ const applyTheme = (config: ThemeConfig) => {
 
 ## Dark Mode Magic
 
-Dark mode works by intelligently inverting the color scale. Light shades become dark, and dark shades become light, while maintaining perceptual consistency:
+Dark mode works by intelligently transforming the lightness values in the OKLCH color space. The algorithm applies a mathematical transformation that creates natural-looking dark variants:
 
 ```typescript
-const shadeMap = isDarkMode.value ? {
-  50: 950,   // Lightest becomes darkest
-  100: 900,
-  200: 800,
-  300: 700,
-  400: 600,
-  500: 500,  // Middle stays middle
-  600: 400,
-  700: 300,
-  800: 200,
-  900: 100,
-  950: 50    // Darkest becomes lightest
-} : {
-  // Normal mapping in light mode
-};
+let lightness = Number(l?.substring(0, l.length - 1))
+if (isDarkMode.value) {
+  lightness = 120 - lightness;  // Invert around 60% lightness
+}
 ```
+
+This approach:
+- Inverts lightness around the 60% point (120 - L)
+- Preserves color hue and chroma for consistency
+- Creates natural-looking dark variants automatically
 
 When you toggle dark mode:
 - The document gets a `dark` class
-- Color variables are regenerated with inverted shades
+- Color variables are regenerated with transformed OKLCH lightness values
 - All Tailwind utilities automatically use the new values
 
 ## Using the System

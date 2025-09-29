@@ -90,33 +90,6 @@ export const useDynamicTheme = () => {
     // For each semantic color
     const semanticColors = ["primary", "secondary", "surface", "text", "success", "warn", "error"] as const;
 
-    // Define the shade mapping for dark mode
-    const shadeMap: Record<string | number, string | number> = isDarkMode.value ? {
-      50: 950,
-      100: 900,
-      200: 800,
-      300: 700,
-      400: 600,
-      500: 500,
-      600: 400,
-      700: 300,
-      800: 200,
-      900: 100,
-      950: 50
-    } : {
-      50: 50,
-      100: 100,
-      200: 200,
-      300: 300,
-      400: 400,
-      500: 500,
-      600: 600,
-      700: 700,
-      800: 800,
-      900: 900,
-      950: 950
-    };
-
     semanticColors.forEach((semantic) => {
       const colorName = config[semantic];
       const palette = colors[colorName as TailwindColorName] as any;
@@ -128,9 +101,7 @@ export const useDynamicTheme = () => {
 
       // Generate CSS variables for each shade
       Object.entries(palette).forEach(([shade, value]) => {
-        // Get the mapped shade value for the current shade
-        const mappedShade = shadeMap[shade];
-        const mappedValue = palette[mappedShade] || value;
+        const mappedValue = palette[shade] || value;
 
         // Extract just the L C H values from the oklch() string
         const oklchMatch = (mappedValue as string).match(
@@ -139,7 +110,11 @@ export const useDynamicTheme = () => {
         if (oklchMatch) {
           // Store just the values without oklch() wrapper for flexibility
           const [, l, c, h] = oklchMatch;
-          css += `  --color-${semantic}-${shade}: oklch(${l} ${c} ${h});\n`;
+          let lightness = Number(l?.substring(0, l.length - 1))
+          if (isDarkMode.value) {
+            lightness = 120 - lightness;
+          }
+          css += `  --color-${semantic}-${shade}: oklch(${lightness}% ${c} ${h});\n`;
         }
       });
     });
@@ -264,59 +239,6 @@ export const useDynamicTheme = () => {
     }
   };
 
-
-  /**
-   * Export current theme to JSON
-   */
-  const exportTheme = () => {
-    const config = {
-      name:
-        currentTheme.value === "custom" ? "Custom Theme" : currentTheme.value,
-      version: "1.0.0",
-      colors:
-        currentTheme.value === "custom"
-          ? JSON.parse(localStorage.getItem("custom-theme-config") || "{}")
-          : themes[currentTheme.value],
-      created: new Date().toISOString(),
-    };
-
-    const blob = new Blob([JSON.stringify(config, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `theme-${config.name.toLowerCase().replace(/\s+/g, "-")}.json`;
-    a.click();
-
-    URL.revokeObjectURL(url);
-  };
-
-  /**
-   * Import theme from JSON file
-   */
-  const importTheme = async (file: File) => {
-    try {
-      const text = await file.text();
-      const config = JSON.parse(text);
-
-      // Validate the imported config
-      if (
-        config.colors?.primary &&
-        config.colors?.secondary &&
-        config.colors?.surface
-      ) {
-        setCustomTheme(config.colors);
-      } else {
-        console.error("Invalid theme file");
-      }
-    } catch (error) {
-      console.error("Failed to import theme:", error);
-      throw error;
-    }
-  };
-
   return {
     currentTheme: readonly(currentTheme),
     isDarkMode: readonly(isDarkMode),
@@ -325,8 +247,6 @@ export const useDynamicTheme = () => {
     setTheme,
     setCustomTheme,
     toggleDarkMode,
-    exportTheme,
-    importTheme,
     initTheme,
   };
 };
